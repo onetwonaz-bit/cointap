@@ -38,9 +38,7 @@
                 <h2>Доступні завдання</h2>
                 <span class="reward-info">+20 🪙 за завдання</span>
             </div>
-            <div class="tasks-list" id="tasksList">
-                <!-- Tasks will be loaded here -->
-            </div>
+            <div class="tasks-list" id="tasksList"></div>
         </main>
 
         <!-- Withdraw Tab -->
@@ -57,7 +55,7 @@
                 <button class="btn btn-primary btn-withdraw" id="withdrawBtn" disabled>
                     Запросити вивід
                 </button>
-                <p class="withdraw-note">Виводи обробляються вручну протягом 24-48 годин</p>
+                <p class="withdraw-note">Виводи обробляються протягом 24-48 годин</p>
             </div>
         </main>
 
@@ -71,39 +69,80 @@
             </div>
         </main>
 
-        <!-- Admin Tab (only for admin) -->
+        <!-- Admin Tab -->
         <main class="content hidden" id="admin-tab">
-            <div class="section-header">
-                <h2>🔧 Адмін панель</h2>
+            <div class="admin-header">
+                <h2>🔧 Панель адміністратора</h2>
             </div>
             
-            <!-- Stats -->
-            <div class="admin-card" id="adminStats">
-                <div class="stat-row"><span>Користувачів:</span><span id="statUsers">0</span></div>
-                <div class="stat-row"><span>Загальний баланс:</span><span id="statBalance">0 🪙</span></div>
-                <div class="stat-row"><span>Очікують виводу:</span><span id="statPending">0</span></div>
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statUsers">0</div>
+                    <div class="stat-label">Користувачів</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" id="statBalance">0</div>
+                    <div class="stat-label">Загальний баланс</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">Очікують виводу</div>
+                </div>
             </div>
 
-            <!-- Add Task -->
-            <div class="admin-card">
-                <h3>➕ Додати завдання</h3>
-                <input type="text" id="taskTitle" placeholder="Назва" class="admin-input">
-                <input type="text" id="taskDesc" placeholder="Опис" class="admin-input">
-                <input type="text" id="taskLink" placeholder="https://t.me/channel" class="admin-input">
-                <input type="text" id="taskChannel" placeholder="@channel_username" class="admin-input">
-                <button class="btn btn-primary" id="addTaskBtn" style="width:100%;margin-top:12px">Додати</button>
+            <!-- Add Task Form -->
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <span class="admin-section-icon">➕</span>
+                    <h3>Додати завдання</h3>
+                </div>
+                <div class="admin-form">
+                    <div class="input-group">
+                        <label>Назва завдання</label>
+                        <input type="text" id="taskTitle" placeholder="Підписка на канал">
+                    </div>
+                    <div class="input-group">
+                        <label>Опис</label>
+                        <input type="text" id="taskDesc" placeholder="Підпишись щоб отримати монети">
+                    </div>
+                    <div class="input-group">
+                        <label>Посилання</label>
+                        <input type="text" id="taskLink" placeholder="https://t.me/channel">
+                    </div>
+                    <div class="input-group">
+                        <label>Username каналу (для перевірки)</label>
+                        <input type="text" id="taskChannel" placeholder="@channel">
+                    </div>
+                    <button class="btn btn-primary btn-full" id="addTaskBtn">
+                        <span>➕</span> Додати завдання
+                    </button>
+                </div>
             </div>
 
-            <!-- Pending Withdrawals -->
-            <div class="admin-card">
-                <h3>💰 Запити на вивід</h3>
-                <div id="withdrawalsList"></div>
+            <!-- Withdrawals -->
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <span class="admin-section-icon">💸</span>
+                    <h3>Запити на вивід</h3>
+                </div>
+                <div class="admin-list" id="withdrawalsList">
+                    <div class="empty-state-small">Немає запитів</div>
+                </div>
             </div>
 
             <!-- Users -->
-            <div class="admin-card">
-                <h3>👥 Користувачі</h3>
-                <div id="usersList"></div>
+            <div class="admin-section">
+                <div class="admin-section-header">
+                    <span class="admin-section-icon">👥</span>
+                    <h3>Користувачі</h3>
+                </div>
+                <div class="admin-list" id="usersList">
+                    <div class="empty-state-small">Завантаження...</div>
+                </div>
             </div>
         </main>
     </div>

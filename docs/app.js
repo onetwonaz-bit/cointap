@@ -1,6 +1,7 @@
 // CoinTap - Telegram Mini App
-const API_URL = 'http://localhost:3000/api'; // Change to your server URL
-const ADMIN_ID = 5813570653; // Your Telegram ID
+// ВАЖЛИВО: Зміни цей URL на свій сервер!
+const API_URL = 'http://localhost:3000/api';
+const ADMIN_ID = 5813570653;
 
 let currentUser = null;
 let isAdmin = false;
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTelegram();
     initNavigation();
     initModal();
+    initAdmin();
 });
 
 function initTelegram() {
@@ -27,11 +29,7 @@ function initTelegram() {
             document.documentElement.style.setProperty('--text-primary', '#ffffff');
         }
         const user = tg.initDataUnsafe?.user;
-        if (user) {
-            initUser(user);
-        } else {
-            initUser({ id: 123456789, first_name: 'Тест', username: 'testuser' });
-        }
+        initUser(user || { id: 123456789, first_name: 'Тест', username: 'testuser' });
     } else {
         initUser({ id: 123456789, first_name: 'Тест', username: 'testuser' });
     }
@@ -55,10 +53,9 @@ async function initUser(telegramUser) {
         currentUser = data.user;
         updateUI();
         loadTasks();
-        loadHistory();
     } catch (error) {
         console.error('Init error:', error);
-        showToast('Помилка підключення до сервера', 'error');
+        showToast('Помилка підключення', 'error');
     }
 }
 
@@ -68,23 +65,18 @@ function updateUI() {
     document.getElementById('userId').textContent = `ID: ${currentUser.telegramId}`;
     document.getElementById('balance').textContent = currentUser.balance;
     document.getElementById('withdrawBalance').textContent = `${currentUser.balance} 🪙`;
-    const avatar = document.getElementById('userAvatar');
-    avatar.textContent = (currentUser.firstName || currentUser.username || 'U')[0].toUpperCase();
+    document.getElementById('userAvatar').textContent = (currentUser.firstName || currentUser.username || 'U')[0].toUpperCase();
     document.getElementById('withdrawBtn').disabled = currentUser.balance < 100;
     
-    // Show admin tab if admin
     isAdmin = currentUser.telegramId === ADMIN_ID;
-    if (isAdmin) {
-        document.getElementById('adminTab').classList.remove('hidden');
-    }
+    if (isAdmin) document.getElementById('adminTab').classList.remove('hidden');
 }
 
 function initNavigation() {
-    const tabs = document.querySelectorAll('.nav-tab');
-    tabs.forEach(tab => {
+    document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabName = tab.dataset.tab;
-            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
             document.getElementById(`${tabName}-tab`).classList.remove('hidden');
@@ -93,9 +85,9 @@ function initNavigation() {
         });
     });
     document.getElementById('withdrawBtn').addEventListener('click', requestWithdraw);
-    document.getElementById('addTaskBtn')?.addEventListener('click', addTask);
 }
 
+// ============ TASKS ============
 async function loadTasks() {
     const tasksList = document.getElementById('tasksList');
     tasksList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
@@ -111,20 +103,21 @@ async function loadTasks() {
 
 function renderTasks() {
     const tasksList = document.getElementById('tasksList');
-    if (tasks.length === 0) {
+    if (!tasks.length) {
         tasksList.innerHTML = '<div class="empty-state"><span class="empty-icon">✅</span><p>Всі завдання виконано!</p></div>';
         return;
     }
     tasksList.innerHTML = tasks.map(task => `
         <div class="task-card ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
-            <div class="task-icon">${getTaskIcon(task.type)}</div>
+            <div class="task-icon">${{'subscribe':'📢','watch':'📺','visit':'🔗'}[task.type] || '⭐'}</div>
             <div class="task-info">
                 <div class="task-title">${escapeHtml(task.title)}</div>
-                <div class="task-description">${escapeHtml(task.description)}</div>
+                <div class="task-description">${escapeHtml(task.description || '')}</div>
             </div>
             ${task.completed ? '<span class="task-status">✅</span>' : '<span class="task-reward">+20 🪙</span>'}
         </div>
     `).join('');
+    
     tasksList.querySelectorAll('.task-card:not(.completed)').forEach(card => {
         card.addEventListener('click', () => {
             const task = tasks.find(t => t.id === parseInt(card.dataset.taskId));
@@ -133,22 +126,19 @@ function renderTasks() {
     });
 }
 
-function getTaskIcon(type) {
-    return { 'subscribe': '📢', 'watch': '📺', 'visit': '🔗' }[type] || '⭐';
-}
-
+// ============ MODAL ============
 function initModal() {
-    document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
-    document.getElementById('modalClose').addEventListener('click', closeModal);
-    document.getElementById('modalVerify').addEventListener('click', verifyTask);
+    document.querySelector('.modal-backdrop')?.addEventListener('click', closeModal);
+    document.getElementById('modalClose')?.addEventListener('click', closeModal);
+    document.getElementById('modalVerify')?.addEventListener('click', verifyTask);
 }
 
 function openTaskModal(task) {
     currentTask = task;
     document.getElementById('modalTitle').textContent = task.title;
-    document.getElementById('modalDescription').textContent = task.description;
+    document.getElementById('modalDescription').textContent = task.description || '';
     document.getElementById('modalAction').href = task.link;
-    document.getElementById('modalAction').textContent = { 'subscribe': 'Підписатись', 'watch': 'Переглянути', 'visit': 'Перейти' }[task.type] || 'Виконати';
+    document.getElementById('modalAction').textContent = {'subscribe':'Підписатись','watch':'Переглянути','visit':'Перейти'}[task.type] || 'Виконати';
     document.getElementById('taskModal').classList.remove('hidden');
 }
 
@@ -159,9 +149,9 @@ function closeModal() {
 
 async function verifyTask() {
     if (!currentTask) return;
-    const verifyBtn = document.getElementById('modalVerify');
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = 'Перевірка...';
+    const btn = document.getElementById('modalVerify');
+    btn.disabled = true;
+    btn.textContent = 'Перевірка...';
     try {
         const response = await fetch(`${API_URL}/tasks/verify`, {
             method: 'POST',
@@ -172,58 +162,51 @@ async function verifyTask() {
         if (data.success) {
             currentUser.balance = data.newBalance;
             updateUI();
-            const task = tasks.find(t => t.id === currentTask.id);
-            if (task) task.completed = true;
+            tasks.find(t => t.id === currentTask.id).completed = true;
             renderTasks();
             closeModal();
             showToast('Завдання виконано! +20 🪙', 'success');
             tg?.HapticFeedback?.notificationOccurred('success');
         } else {
             showToast(data.message || 'Підписка не знайдена', 'error');
-            tg?.HapticFeedback?.notificationOccurred('error');
         }
     } catch (error) {
         showToast('Помилка перевірки', 'error');
     } finally {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'Перевірити';
+        btn.disabled = false;
+        btn.textContent = 'Перевірити';
     }
 }
 
+// ============ HISTORY ============
 async function loadHistory() {
-    const historyList = document.getElementById('historyList');
-    historyList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    const list = document.getElementById('historyList');
+    list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
     try {
         const response = await fetch(`${API_URL}/history?userId=${currentUser.id}`);
         const data = await response.json();
         history = data.history;
-        renderHistory();
-    } catch (error) {
-        historyList.innerHTML = '<div class="empty-state"><span class="empty-icon">❌</span><p>Помилка завантаження</p></div>';
-    }
-}
-
-function renderHistory() {
-    const historyList = document.getElementById('historyList');
-    if (history.length === 0) {
-        historyList.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Історія поки порожня</p></div>';
-        return;
-    }
-    historyList.innerHTML = history.map(item => {
-        let amountClass = 'positive', amountPrefix = '+';
-        if (item.type === 'withdraw') {
-            amountClass = item.status === 'pending' ? 'pending' : 'negative';
-            amountPrefix = '-';
+        if (!history.length) {
+            list.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Історія порожня</p></div>';
+            return;
         }
-        return `<div class="history-item"><div class="history-info"><div class="history-title">${escapeHtml(item.description)}</div><div class="history-date">${formatDate(item.createdAt)}</div></div><span class="history-amount ${amountClass}">${amountPrefix}${item.amount} 🪙</span></div>`;
-    }).join('');
+        list.innerHTML = history.map(item => {
+            const isWithdraw = item.type === 'withdraw';
+            const cls = isWithdraw ? (item.status === 'pending' ? 'pending' : 'negative') : 'positive';
+            const prefix = isWithdraw ? '-' : '+';
+            return `<div class="history-item"><div class="history-info"><div class="history-title">${escapeHtml(item.description)}</div><div class="history-date">${formatDate(item.createdAt)}</div></div><span class="history-amount ${cls}">${prefix}${item.amount} 🪙</span></div>`;
+        }).join('');
+    } catch (error) {
+        list.innerHTML = '<div class="empty-state"><span class="empty-icon">❌</span><p>Помилка</p></div>';
+    }
 }
 
+// ============ WITHDRAW ============
 async function requestWithdraw() {
-    if (currentUser.balance < 100) { showToast('Мінімальна сума для виводу: 100 🪙', 'error'); return; }
-    const withdrawBtn = document.getElementById('withdrawBtn');
-    withdrawBtn.disabled = true;
-    withdrawBtn.textContent = 'Обробка...';
+    if (currentUser.balance < 100) { showToast('Мінімум 100 🪙', 'error'); return; }
+    const btn = document.getElementById('withdrawBtn');
+    btn.disabled = true;
+    btn.textContent = 'Обробка...';
     try {
         const response = await fetch(`${API_URL}/withdraw`, {
             method: 'POST',
@@ -234,25 +217,120 @@ async function requestWithdraw() {
         if (data.success) {
             currentUser.balance = data.newBalance;
             updateUI();
-            showToast('Запит на вивід створено!', 'success');
+            showToast('Запит створено!', 'success');
             loadHistory();
-            tg?.HapticFeedback?.notificationOccurred('success');
         } else {
-            showToast(data.message || 'Помилка створення запиту', 'error');
+            showToast(data.message || 'Помилка', 'error');
         }
     } catch (error) {
-        showToast('Помилка підключення', 'error');
+        showToast('Помилка', 'error');
     } finally {
-        withdrawBtn.disabled = currentUser.balance < 100;
-        withdrawBtn.textContent = 'Запросити вивід';
+        btn.disabled = currentUser.balance < 100;
+        btn.textContent = 'Запросити вивід';
     }
 }
 
+// ============ ADMIN ============
+function initAdmin() {
+    document.getElementById('addTaskBtn')?.addEventListener('click', addTask);
+}
+
+async function loadAdminData() {
+    if (!isAdmin) return;
+    try {
+        const response = await fetch(`${API_URL}/admin/data`);
+        const data = await response.json();
+        
+        document.getElementById('statUsers').textContent = data.stats.totalUsers;
+        document.getElementById('statBalance').textContent = data.stats.totalBalance;
+        document.getElementById('statPending').textContent = data.stats.pendingWithdrawals;
+        
+        // Withdrawals
+        const wList = document.getElementById('withdrawalsList');
+        wList.innerHTML = data.withdrawals.length ? data.withdrawals.map(w => `
+            <div class="admin-list-item">
+                <div class="admin-list-info">
+                    <div class="admin-list-name">${escapeHtml(w.firstName || w.username || 'User')}</div>
+                    <div class="admin-list-sub">ID: ${w.telegramId}</div>
+                </div>
+                <span class="withdrawal-amount">${w.amount} 🪙</span>
+                <div class="admin-list-actions">
+                    <button class="btn btn-sm btn-success" onclick="approveWithdraw(${w.id})">✓</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectWithdraw(${w.id})">✕</button>
+                </div>
+            </div>
+        `).join('') : '<div class="empty-state-small">Немає запитів</div>';
+        
+        // Users
+        const uList = document.getElementById('usersList');
+        uList.innerHTML = data.users.slice(0, 30).map(u => `
+            <div class="admin-list-item">
+                <div class="admin-list-info">
+                    <div class="admin-list-name ${u.isBanned ? 'user-banned' : ''}">${u.isBanned ? '🚫 ' : ''}${escapeHtml(u.firstName || u.username || 'User')}</div>
+                    <div class="admin-list-sub">ID: ${u.telegramId}</div>
+                </div>
+                <span class="user-balance-badge">${u.balance} 🪙</span>
+                <div class="admin-list-actions">
+                    ${u.isBanned 
+                        ? `<button class="btn btn-sm btn-success" onclick="unbanUser(${u.id})">Розбан</button>`
+                        : `<button class="btn btn-sm btn-danger" onclick="banUser(${u.id})">Бан</button>`}
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Admin error:', error);
+    }
+}
+
+async function addTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDesc').value.trim();
+    const link = document.getElementById('taskLink').value.trim();
+    const channelId = document.getElementById('taskChannel').value.trim();
+    
+    if (!title || !link) { showToast('Заповни назву і посилання', 'error'); return; }
+    
+    try {
+        const response = await fetch(`${API_URL}/admin/task`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, description, link, channelId, type: 'subscribe' })
+        });
+        if ((await response.json()).success) {
+            showToast('Завдання додано!', 'success');
+            ['taskTitle', 'taskDesc', 'taskLink', 'taskChannel'].forEach(id => document.getElementById(id).value = '');
+            loadTasks();
+        }
+    } catch (error) { showToast('Помилка', 'error'); }
+}
+
+async function approveWithdraw(id) {
+    await fetch(`${API_URL}/admin/withdraw/${id}/approve`, { method: 'POST' });
+    showToast('Підтверджено', 'success');
+    loadAdminData();
+}
+
+async function rejectWithdraw(id) {
+    await fetch(`${API_URL}/admin/withdraw/${id}/reject`, { method: 'POST' });
+    showToast('Відхилено', 'success');
+    loadAdminData();
+}
+
+async function banUser(id) {
+    await fetch(`${API_URL}/admin/user/${id}/ban`, { method: 'POST' });
+    showToast('Забанено', 'success');
+    loadAdminData();
+}
+
+async function unbanUser(id) {
+    await fetch(`${API_URL}/admin/user/${id}/unban`, { method: 'POST' });
+    showToast('Розбанено', 'success');
+    loadAdminData();
+}
+
+// ============ UTILS ============
 function showBannedScreen(reason) {
-    const overlay = document.createElement('div');
-    overlay.className = 'banned-overlay';
-    overlay.innerHTML = `<div class="banned-icon">🚫</div><h1 class="banned-title">Акаунт заблоковано</h1><p class="banned-message">${reason || 'Ваш акаунт було заблоковано за порушення правил.'}</p>`;
-    document.body.appendChild(overlay);
+    document.body.innerHTML = `<div class="banned-overlay"><div class="banned-icon">🚫</div><h1 class="banned-title">Заблоковано</h1><p class="banned-message">${reason || 'Порушення правил'}</p></div>`;
 }
 
 function showToast(message, type = '') {
@@ -263,6 +341,7 @@ function showToast(message, type = '') {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -270,117 +349,4 @@ function escapeHtml(text) {
 
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
-
-
-// ============ ADMIN FUNCTIONS ============
-
-async function loadAdminData() {
-    if (!isAdmin) return;
-    try {
-        const response = await fetch(`${API_URL}/admin/data`);
-        const data = await response.json();
-        
-        // Stats
-        document.getElementById('statUsers').textContent = data.stats.totalUsers;
-        document.getElementById('statBalance').textContent = data.stats.totalBalance + ' 🪙';
-        document.getElementById('statPending').textContent = data.stats.pendingWithdrawals;
-        
-        // Withdrawals
-        const withdrawalsList = document.getElementById('withdrawalsList');
-        if (data.withdrawals.length === 0) {
-            withdrawalsList.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">Немає запитів</p>';
-        } else {
-            withdrawalsList.innerHTML = data.withdrawals.map(w => `
-                <div class="withdrawal-row">
-                    <div class="user-info-admin">
-                        <div class="user-name">${escapeHtml(w.firstName || w.username || 'User')}</div>
-                        <div class="user-balance">${w.amount} 🪙 ($${(w.amount/100).toFixed(2)})</div>
-                    </div>
-                    <button class="btn btn-sm btn-success" onclick="approveWithdraw(${w.id})">✓</button>
-                    <button class="btn btn-sm btn-danger" onclick="rejectWithdraw(${w.id})" style="margin-left:4px">✕</button>
-                </div>
-            `).join('');
-        }
-        
-        // Users
-        const usersList = document.getElementById('usersList');
-        usersList.innerHTML = data.users.slice(0, 20).map(u => `
-            <div class="user-row">
-                <div class="user-info-admin">
-                    <div class="user-name">${u.isBanned ? '🚫 ' : ''}${escapeHtml(u.firstName || u.username || 'User')}</div>
-                    <div class="user-balance">ID: ${u.telegramId} | ${u.balance} 🪙</div>
-                </div>
-                ${u.isBanned 
-                    ? `<button class="btn btn-sm btn-success" onclick="unbanUser(${u.id})">Розбан</button>`
-                    : `<button class="btn btn-sm btn-danger" onclick="banUser(${u.id})">Бан</button>`
-                }
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Admin data error:', error);
-    }
-}
-
-async function addTask() {
-    const title = document.getElementById('taskTitle').value.trim();
-    const description = document.getElementById('taskDesc').value.trim();
-    const link = document.getElementById('taskLink').value.trim();
-    const channelId = document.getElementById('taskChannel').value.trim();
-    
-    if (!title || !link) {
-        showToast('Заповни назву і посилання', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/admin/task`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, link, channelId, type: 'subscribe' })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showToast('Завдання додано!', 'success');
-            document.getElementById('taskTitle').value = '';
-            document.getElementById('taskDesc').value = '';
-            document.getElementById('taskLink').value = '';
-            document.getElementById('taskChannel').value = '';
-            loadTasks();
-        }
-    } catch (error) {
-        showToast('Помилка', 'error');
-    }
-}
-
-async function approveWithdraw(id) {
-    try {
-        await fetch(`${API_URL}/admin/withdraw/${id}/approve`, { method: 'POST' });
-        showToast('Вивід підтверджено', 'success');
-        loadAdminData();
-    } catch (error) { showToast('Помилка', 'error'); }
-}
-
-async function rejectWithdraw(id) {
-    try {
-        await fetch(`${API_URL}/admin/withdraw/${id}/reject`, { method: 'POST' });
-        showToast('Вивід відхилено', 'success');
-        loadAdminData();
-    } catch (error) { showToast('Помилка', 'error'); }
-}
-
-async function banUser(id) {
-    try {
-        await fetch(`${API_URL}/admin/user/${id}/ban`, { method: 'POST' });
-        showToast('Користувача забанено', 'success');
-        loadAdminData();
-    } catch (error) { showToast('Помилка', 'error'); }
-}
-
-async function unbanUser(id) {
-    try {
-        await fetch(`${API_URL}/admin/user/${id}/unban`, { method: 'POST' });
-        showToast('Користувача розбанено', 'success');
-        loadAdminData();
-    } catch (error) { showToast('Помилка', 'error'); }
 }
