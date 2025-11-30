@@ -149,6 +149,79 @@ app.post('/api/withdraw', (req, res) => {
     }
 });
 
+// ============ Admin API ============
+
+// Get admin data
+app.get('/api/admin/data', (req, res) => {
+    try {
+        const users = db.getAllUsers.all();
+        const withdrawals = db.getPendingWithdrawals.all();
+        
+        res.json({
+            stats: {
+                totalUsers: users.length,
+                totalBalance: users.reduce((sum, u) => sum + u.balance, 0),
+                pendingWithdrawals: withdrawals.length
+            },
+            users: users,
+            withdrawals: withdrawals
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add task via API
+app.post('/api/admin/task', (req, res) => {
+    try {
+        const { type, title, description, link, channelId } = req.body;
+        db.createTask.run(type || 'subscribe', title, description || '', link, channelId || null, 20);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Approve withdrawal
+app.post('/api/admin/withdraw/:id/approve', (req, res) => {
+    try {
+        db.approveWithdrawal.run(parseInt(req.params.id));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Reject withdrawal
+app.post('/api/admin/withdraw/:id/reject', (req, res) => {
+    try {
+        db.rejectWithdrawal.run(parseInt(req.params.id));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Ban user
+app.post('/api/admin/user/:id/ban', (req, res) => {
+    try {
+        db.banUser.run('Забанено адміністратором', parseInt(req.params.id));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Unban user
+app.post('/api/admin/user/:id/unban', (req, res) => {
+    try {
+        db.unbanUser.run(parseInt(req.params.id));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // ============ Telegram Bot Commands ============
 
 // Команда /start

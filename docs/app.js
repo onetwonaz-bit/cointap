@@ -1,7 +1,9 @@
 // CoinTap - Telegram Mini App
 const API_URL = 'http://localhost:3000/api'; // Change to your server URL
+const ADMIN_ID = 5813570653; // Your Telegram ID
 
 let currentUser = null;
+let isAdmin = false;
 let tasks = [];
 let history = [];
 let currentTask = null;
@@ -69,6 +71,12 @@ function updateUI() {
     const avatar = document.getElementById('userAvatar');
     avatar.textContent = (currentUser.firstName || currentUser.username || 'U')[0].toUpperCase();
     document.getElementById('withdrawBtn').disabled = currentUser.balance < 100;
+    
+    // Show admin tab if admin
+    isAdmin = currentUser.telegramId === ADMIN_ID;
+    if (isAdmin) {
+        document.getElementById('adminTab').classList.remove('hidden');
+    }
 }
 
 function initNavigation() {
@@ -81,9 +89,11 @@ function initNavigation() {
             document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
             document.getElementById(`${tabName}-tab`).classList.remove('hidden');
             if (tabName === 'history') loadHistory();
+            if (tabName === 'admin' && isAdmin) loadAdminData();
         });
     });
     document.getElementById('withdrawBtn').addEventListener('click', requestWithdraw);
+    document.getElementById('addTaskBtn')?.addEventListener('click', addTask);
 }
 
 async function loadTasks() {
@@ -260,4 +270,117 @@ function escapeHtml(text) {
 
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+
+// ============ ADMIN FUNCTIONS ============
+
+async function loadAdminData() {
+    if (!isAdmin) return;
+    try {
+        const response = await fetch(`${API_URL}/admin/data`);
+        const data = await response.json();
+        
+        // Stats
+        document.getElementById('statUsers').textContent = data.stats.totalUsers;
+        document.getElementById('statBalance').textContent = data.stats.totalBalance + ' 🪙';
+        document.getElementById('statPending').textContent = data.stats.pendingWithdrawals;
+        
+        // Withdrawals
+        const withdrawalsList = document.getElementById('withdrawalsList');
+        if (data.withdrawals.length === 0) {
+            withdrawalsList.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">Немає запитів</p>';
+        } else {
+            withdrawalsList.innerHTML = data.withdrawals.map(w => `
+                <div class="withdrawal-row">
+                    <div class="user-info-admin">
+                        <div class="user-name">${escapeHtml(w.firstName || w.username || 'User')}</div>
+                        <div class="user-balance">${w.amount} 🪙 ($${(w.amount/100).toFixed(2)})</div>
+                    </div>
+                    <button class="btn btn-sm btn-success" onclick="approveWithdraw(${w.id})">✓</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectWithdraw(${w.id})" style="margin-left:4px">✕</button>
+                </div>
+            `).join('');
+        }
+        
+        // Users
+        const usersList = document.getElementById('usersList');
+        usersList.innerHTML = data.users.slice(0, 20).map(u => `
+            <div class="user-row">
+                <div class="user-info-admin">
+                    <div class="user-name">${u.isBanned ? '🚫 ' : ''}${escapeHtml(u.firstName || u.username || 'User')}</div>
+                    <div class="user-balance">ID: ${u.telegramId} | ${u.balance} 🪙</div>
+                </div>
+                ${u.isBanned 
+                    ? `<button class="btn btn-sm btn-success" onclick="unbanUser(${u.id})">Розбан</button>`
+                    : `<button class="btn btn-sm btn-danger" onclick="banUser(${u.id})">Бан</button>`
+                }
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Admin data error:', error);
+    }
+}
+
+async function addTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDesc').value.trim();
+    const link = document.getElementById('taskLink').value.trim();
+    const channelId = document.getElementById('taskChannel').value.trim();
+    
+    if (!title || !link) {
+        showToast('Заповни назву і посилання', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/admin/task`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, description, link, channelId, type: 'subscribe' })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Завдання додано!', 'success');
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskLink').value = '';
+            document.getElementById('taskChannel').value = '';
+            loadTasks();
+        }
+    } catch (error) {
+        showToast('Помилка', 'error');
+    }
+}
+
+async function approveWithdraw(id) {
+    try {
+        await fetch(`${API_URL}/admin/withdraw/${id}/approve`, { method: 'POST' });
+        showToast('Вивід підтверджено', 'success');
+        loadAdminData();
+    } catch (error) { showToast('Помилка', 'error'); }
+}
+
+async function rejectWithdraw(id) {
+    try {
+        await fetch(`${API_URL}/admin/withdraw/${id}/reject`, { method: 'POST' });
+        showToast('Вивід відхилено', 'success');
+        loadAdminData();
+    } catch (error) { showToast('Помилка', 'error'); }
+}
+
+async function banUser(id) {
+    try {
+        await fetch(`${API_URL}/admin/user/${id}/ban`, { method: 'POST' });
+        showToast('Користувача забанено', 'success');
+        loadAdminData();
+    } catch (error) { showToast('Помилка', 'error'); }
+}
+
+async function unbanUser(id) {
+    try {
+        await fetch(`${API_URL}/admin/user/${id}/unban`, { method: 'POST' });
+        showToast('Користувача розбанено', 'success');
+        loadAdminData();
+    } catch (error) { showToast('Помилка', 'error'); }
 }
