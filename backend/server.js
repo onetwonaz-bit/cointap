@@ -205,7 +205,15 @@ app.post('/api/admin/withdraw/:id/reject', (req, res) => {
 // Ban user
 app.post('/api/admin/user/:id/ban', (req, res) => {
     try {
-        db.banUser.run('Забанено адміністратором', parseInt(req.params.id));
+        const userId = parseInt(req.params.id);
+        const user = db.getUserById.get(userId);
+        
+        // Захист від бану адміна
+        if (user && user.telegramId === ADMIN_ID) {
+            return res.json({ success: false, message: 'Не можна забанити адміністратора' });
+        }
+        
+        db.banUser.run('Забанено адміністратором', userId);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
@@ -330,6 +338,11 @@ bot.onText(/\/ban (\d+) ?(.*)/, (msg, match) => {
     
     const telegramId = parseInt(match[1]);
     const reason = match[2] || 'Порушення правил';
+    
+    // Захист від бану адміна
+    if (telegramId === ADMIN_ID) {
+        return bot.sendMessage(msg.chat.id, '❌ Не можна забанити адміністратора');
+    }
     
     const user = db.getUserByTelegramId.get(telegramId);
     if (!user) {
