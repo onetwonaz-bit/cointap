@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CoinTap</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="avatar" id="userAvatar"></div>
+                <div class="user-info">
+                    <span class="username" id="username">Користувач</span>
+                    <span class="user-id" id="userId">ID: ---</span>
+                </div>
+                <div class="balance-card">
+                    <span class="balance-label">Баланс</span>
+                    <span class="balance-value"><span id="balance">0</span> 🪙</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="tasks">Завдання</button>
+            <button class="nav-tab" data-tab="withdraw">Вивід</button>
+            <button class="nav-tab" data-tab="history">Історія</button>
+        </nav>
+
+        <!-- Tasks Tab -->
+        <main class="content" id="tasks-tab">
+            <div class="section-header">
+                <h2>Доступні завдання</h2>
+                <span class="reward-info">+20 🪙 за завдання</span>
+            </div>
+            <div class="tasks-list" id="tasksList">
+                <!-- Tasks will be loaded here -->
+            </div>
+        </main>
+
+        <!-- Withdraw Tab -->
+        <main class="content hidden" id="withdraw-tab">
+            <div class="withdraw-card">
+                <div class="withdraw-icon">💰</div>
+                <h2>Вивід коштів</h2>
+                <p class="withdraw-info">Мінімальна сума: <strong>100 🪙</strong></p>
+                <p class="withdraw-rate">100 🪙 = $1.00</p>
+                <div class="withdraw-balance">
+                    <span>Ваш баланс:</span>
+                    <span class="balance-big" id="withdrawBalance">0 🪙</span>
+                </div>
+                <button class="btn btn-primary btn-withdraw" id="withdrawBtn" disabled>
+                    Запросити вивід
+                </button>
+                <p class="withdraw-note">Виводи обробляються вручну протягом 24-48 годин</p>
+            </div>
+        </main>
+
+        <!-- History Tab -->
+        <main class="content hidden" id="history-tab">
+            <div class="history-list" id="historyList">
+                <div class="empty-state">
+                    <span class="empty-icon">📋</span>
+                    <p>Історія поки порожня</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal hidden" id="taskModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Завдання</h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="modalDescription"></p>
+                <div class="modal-reward">+20 🪙</div>
+            </div>
+            <div class="modal-actions">
+                <a href="#" class="btn btn-primary" id="modalAction" target="_blank">Підписатись</a>
+                <button class="btn btn-success" id="modalVerify">Перевірити</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast hidden" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
