@@ -65,7 +65,7 @@ function updateUI() {
     document.getElementById('userId').textContent = `ID: ${currentUser.telegramId}`;
     document.getElementById('balance').textContent = currentUser.balance;
     document.getElementById('withdrawBalance').textContent = `${currentUser.balance} 🪙`;
-    document.getElementById('userAvatar').dataset.initial = (currentUser.firstName || currentUser.username || 'U')[0].toUpperCase();
+    document.getElementById('userAvatar').textContent = (currentUser.firstName || currentUser.username || 'U')[0].toUpperCase();
     document.getElementById('withdrawBtn').disabled = currentUser.balance < 100;
     
     isAdmin = currentUser.telegramId === ADMIN_ID;
