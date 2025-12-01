@@ -1,6 +1,6 @@
 // CoinTap - Telegram Mini App
 // ВАЖЛИВО: Зміни цей URL на свій сервер!
-const API_URL = 'https://cointap-production.up.railway.app/api';
+const API_URL = 'http://144.76.207.195:3000/api';
 const ADMIN_ID = 5813570653;
 
 let currentUser = null;

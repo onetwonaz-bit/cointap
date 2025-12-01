@@ -1,5 +1,5 @@
 // CoinTap - Telegram Mini App
-const API_URL = 'http://localhost:3000/api'; // Change to your server URL
+const API_URL = 'http://144.76.207.195:3000/api'; // Chaadsadandadadaage to your server URL
 
 // State
 let currentUser = null;
